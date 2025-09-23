@@ -1,0 +1,24 @@
+#+TITLE:	File Dimension
+#+SUBTITLE:	README
+#+DATE:		2025-09-23 05:27:04-04:00
+#+LASTMOD: 2025-09-23 06:30:33-0400 (EDT)
+#+OPTIONS:	toc:nil num:nil
+#+STARTUP:	indent showeverything
+#+CATEGORIES[]:	Projects
+#+TAGS[]:	readme python filedimension gemini googleai sqitch sqlalchemy
+
+* Description
+- I am working with Google's Gemini AI to create my File Dimension for managing my photos, etc.
+
+* Tech Stack
+- SQitch / SQL
+- Python / SQLAlchemy
+- PostgreSQL
+
+* URLs
+- Code: [[https://github.com/palevell/FileDimension][GitHub]]
+- AI Assistant: [[https://gemini.google.com][Gemini]]
+
+* Milestones
+
+* To Do
