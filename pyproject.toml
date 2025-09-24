@@ -5,7 +5,7 @@ description = "Default template for PDM package"
 authors = [
     {name = "Patrick Allan", email = "patrick29501@gmx.com"},
 ]
-dependencies = []
+dependencies = ["environs>=14.3.0", "loguru>=0.7.3", "sqlalchemy>=2.0.43", "psycopg>=3.2.10", "wand>=0.6.13", "python-magic>=0.4.27"]
 requires-python = "==3.13.*"
 readme = "README.md"
 license = {text = "MIT"}
@@ -13,3 +13,8 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+
+[dependency-groups]
+dev = [
+    "faker>=37.8.0",
+]

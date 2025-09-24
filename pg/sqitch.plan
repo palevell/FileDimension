@@ -2,3 +2,7 @@
 %project=FileDimension
 %uri=https://github.com/palevell/FileDimension
 
+dim_file 2025-09-23T14:05:04Z Patrick <patrick29501@gmx.com> # Add File Dimension table
+data/seed_root_directory 2025-09-23T16:05:13Z Patrick Allan <patrick29501@gmx.com> # Seed the root directory entry
+feature/add_columns_and_comments 2025-09-23T21:06:13Z Patrick Allan <patrick29501@gmx.com> # Add modified_at and mimetype columns and comment the schema
+feature/auto_update_timestamp 2025-09-23T21:27:09Z Patrick Allan <patrick29501@gmx.com> # Add trigger to automatically update the updated_at column

@@ -759,3 +759,4 @@ compile_commands.json
 # Ignore all local history of files
 .history
 .ionide
+sqitch-config.sh
