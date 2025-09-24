@@ -1,5 +1,6 @@
-# finder.py
+# src/file_dimension/files.py
 
+import hashlib
 import mimetypes
 import os
 from datetime import datetime
@@ -77,6 +78,15 @@ def find_files(
 				continue
 
 
-"""
+def calculate_sha384(file_path: str) -> str | None:
+	"""Calculates the SHA-384 hash of a file."""
+	sha384_hash = hashlib.sha384()
+	try:
+		with open(file_path, "rb") as f:
+			# Read the file in chunks to handle large files efficiently
+			for chunk in iter(lambda: f.read(4096), b""):
+				sha384_hash.update(chunk)
+		return sha384_hash.hexdigest()
+	except (FileNotFoundError, IsADirectoryError):
+		return None
 
-"""

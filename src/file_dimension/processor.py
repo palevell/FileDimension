@@ -1,34 +1,9 @@
-# main.py
+# src/file_dimension/processor.py
 
-import hashlib
-import os.path
-
-from loguru import logger
+from .config import logger, MAX_FILES
+from .database import SessionLocal, ensure_path_exists
+from .files import find_files, calculate_sha384
 from sqlalchemy import text
-
-from core import SessionLocal, ensure_path_exists, env  # Import env from core
-from finder import find_files
-
-# --- Loguru Configuration ---
-# Configure logger to show file and line number for easier debugging
-logger.add("file_dimension.log", rotation="10 MB", level="INFO")
-logger.info("Logger initialized.")
-
-
-# ----------------------------
-
-
-def calculate_sha384(file_path: str) -> str | None:
-	"""Calculates the SHA-384 hash of a file."""
-	sha384_hash = hashlib.sha384()
-	try:
-		with open(file_path, "rb") as f:
-			# Read the file in chunks to handle large files efficiently
-			for chunk in iter(lambda: f.read(4096), b""):
-				sha384_hash.update(chunk)
-		return sha384_hash.hexdigest()
-	except (FileNotFoundError, IsADirectoryError):
-		return None
 
 
 # Use logger.catch for clean exception handling
@@ -39,7 +14,7 @@ def process_directory(root_directory: str):
 	up to a maximum number of files defined by the MAX_FILES env variable.
 	"""
 	# Get the file limit from the environment
-	max_files = env.int("MAX_FILES", default=1000)  # Default to 1000 if not set
+	max_files = MAX_FILES
 
 	with SessionLocal() as session:
 		file_generator = find_files(root_directory=root_directory)
@@ -134,17 +109,3 @@ def process_directory(root_directory: str):
 		session.commit()
 		logger.success("Processing complete. Changes committed.")
 
-
-if __name__ == "__main__":
-	# Example: Scan the user's home directory (use a smaller one for testing!)
-	# target_directory = os.path.expanduser("~")
-	target_directory = os.path.expanduser("~/Pictures/Gemini")
-	process_directory(target_directory)
-
-"""
-
-def calculate_sha384(file_path: str) -> str | None:
-    # ... (function remains the same) ...
-
-
-"""

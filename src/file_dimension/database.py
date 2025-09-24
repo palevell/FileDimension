@@ -1,33 +1,11 @@
-# core.py
+# src/file_dimension/database.py
 
 from pathlib import Path
-
-from environs import Env
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from .config import DATABASE_URL, logger # Import from our new config module
 
-# --- Your environs logic for layered config loading ---
-_basedir = Path(__file__).resolve().parent
-env = Env(expand_vars=True)
-env.read_env(str(_basedir / ".env"))
-
-APP_CONFIG = env.str("APP_CONFIG", default="production").lower()
-if APP_CONFIG != "production":
-	envfilename = _basedir / ".envs" / f"{APP_CONFIG}.env"
-	if envfilename.exists():
-		print(f"Loading override config from: {envfilename}")
-		env.read_env(str(envfilename), override=True)
-# ----------------------------------------------------
-
-# Now, read the final DATABASE_URL from the configured environment
-DATABASE_URL = env.str("DATABASE_URL", default=None)
-if not DATABASE_URL:
-	raise ValueError("DATABASE_URL environment variable is not set.")
-
-# Create the database engine
 engine = create_engine(DATABASE_URL)
-
-# Session maker is a factory for creating new Session objects
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -88,20 +66,3 @@ def ensure_path_exists(session, absolute_path: str) -> int:
 	# 3. Return the ID of the final directory in the path
 	return parent_id
 
-
-# Example of how to use it
-if __name__ == "__main__":
-	test_path = "/home/patrick/Pictures/Gemini"
-
-	# Use a session context manager
-	with SessionLocal() as db_session:
-		try:
-			print(f"Ensuring path '{test_path}' exists...")
-			final_id = ensure_path_exists(db_session, test_path)
-			print(f"Path '{test_path}' exists with final ID: {final_id}")
-
-			# Commit the changes if any directories were created
-			db_session.commit()
-		except Exception as e:
-			print(f"An error occurred: {e}")
-			db_session.rollback()
