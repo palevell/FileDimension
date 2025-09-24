@@ -91,7 +91,7 @@ def ensure_path_exists(session, absolute_path: str) -> int:
 
 # Example of how to use it
 if __name__ == "__main__":
-	test_path = "/home/patrick/Pictures"
+	test_path = "/home/patrick/Pictures/Gemini"
 
 	# Use a session context manager
 	with SessionLocal() as db_session:

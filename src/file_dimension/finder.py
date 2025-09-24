@@ -64,7 +64,8 @@ def find_files(
 					"parent_path": dirpath,
 					"file_size": stats.st_size,
 					"mimetype": detected_mimetype,
-					"modified_at": datetime.fromtimestamp(file_mtime_ts).astimezone(),  # Clear name
+					"modified_at": datetime.fromtimestamp(file_mtime_ts).astimezone(),
+					"mtime_ts": file_mtime_ts,  # The raw float, for comparison
 					"device_id": stats.st_dev,
 					"inode": stats.st_ino,
 				}
