@@ -6,3 +6,4 @@ dim_file 2025-09-23T14:05:04Z Patrick <patrick29501@gmx.com> # Add File Dimensio
 data/seed_root_directory 2025-09-23T16:05:13Z Patrick Allan <patrick29501@gmx.com> # Seed the root directory entry
 feature/add_columns_and_comments 2025-09-23T21:06:13Z Patrick Allan <patrick29501@gmx.com> # Add modified_at and mimetype columns and comment the schema
 feature/auto_update_timestamp 2025-09-23T21:27:09Z Patrick Allan <patrick29501@gmx.com> # Add trigger to automatically update the updated_at column
+fix/unique_root_constraint 2025-09-25T21:16:37Z Patrick Allan <patrick29501@gmx.com> # Enforce a single root directory.

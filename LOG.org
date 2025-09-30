@@ -1,11 +1,20 @@
 #+TITLE:	File Dimension
 #+SUBTITLE:	Log
 #+DATE:		2025-09-23 05:27:04-04:00
-#+LASTMOD: 2025-09-23 06:32:47-0400 (EDT)
+#+LASTMOD: 2025-09-30 06:30:48-0400 (EDT)
 #+OPTIONS:	toc:nil num:nil
 #+STARTUP:	indent show3levels
 #+CATEGORIES[]:	Projects
 #+TAGS[]:	log python filedimension gemini googleai sqitch sqlalchemy
+
+* Tuesday, September 30, 2025
+- ~UPDATE~ test ran on first attempt!
+** De-Duplication of Files
+* Friday, September 26, 2025
+** File Dimension Table
+*** Missing Values for Directory Entries
+- ~file_size~, ~device_id~, ~inode~, ~modified_at~
+* Thursday, September 25, 2025
 
 * Tuesday, September 23, 2025
 - Started a chat with Gemini about the File Dimension database that has been on my wish list for a while

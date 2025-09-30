@@ -1,22 +1,30 @@
 # src/file_dimension/processor.py
 
-from .config import logger, MAX_FILES
-from .database import SessionLocal, ensure_path_exists
-from .files import find_files, calculate_sha384
 from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from .config import logger  # , MAX_FILES
+from .database import ensure_path_exists  # , initialize_database
+from .files import find_files, calculate_sha384
 
 
 # Use logger.catch for clean exception handling
 @logger.catch
-def process_directory(root_directory: str):
+def process_directory(db: Session, root_directory: str, max_files_override: int):
 	"""
 	Scans a directory and populates the file dimension table, processing
 	up to a maximum number of files defined by the MAX_FILES env variable.
 	"""
-	# Get the file limit from the environment
-	max_files = MAX_FILES
+	max_files = max_files_override
 
-	with SessionLocal() as session:
+	# with SessionLocal() as session:
+	try:
+		# logger.info(f"Initializing database . . .")
+		# initialize_database(db)
+
+		# Create a cache for this run to store resolved directory IDs
+		path_cache = {}
+
 		file_generator = find_files(root_directory=root_directory)
 
 		logger.info(f"Starting processing. Max files to process: {max_files if max_files > 0 else 'All'}")
@@ -28,20 +36,25 @@ def process_directory(root_directory: str):
 				logger.info(f"Reached MAX_FILES limit of {max_files}. Stopping.")
 				break
 
-			logger.info(f"Processing ({i + 1}): {info_dict['full_path']}")
+			# Only show the first 25 files, and then every 100th
+			if i < 25 or i % 100 == 99:
+				logger.info(f"Processing ({i + 1:,d}): {info_dict['full_path']}")
 
 			# 1. Ensure the parent directory exists in the DB and get its ID
-			parent_id = ensure_path_exists(session, info_dict['parent_path'])
+			# parent_id = ensure_path_exists(db, info_dict['parent_path'])
+			# Pass the cache to the function
+			parent_id = ensure_path_exists(db, info_dict['parent_path'], path_cache)
 
 			# 2. Calculate the file's hash
 			file_hash = calculate_sha384(info_dict['full_path'])
+			logger.info(f"file_hash -> {file_hash}")
 
 			# 3. Check if the file record already exists
-			existing_file = session.execute(
+			existing_file = db.execute(
 				text("""
-		                        SELECT id, file_hash, modified_at FROM public.dim_file
-		                        WHERE parent_id = :parent_id AND file_name = :file_name
-		                    """),
+								SELECT id, file_hash, modified_at FROM public.dim_file
+								WHERE parent_id = :parent_id AND file_name = :file_name
+							"""),
 				{"parent_id": parent_id, "file_name": info_dict['file_name']}
 			).first()
 
@@ -49,16 +62,16 @@ def process_directory(root_directory: str):
 			if existing_file is None:
 				# INSERT new record
 				logger.debug(f"INSERTING new record for {info_dict['file_name']}")
-				session.execute(
+				db.execute(
 					text("""
-		                            INSERT INTO public.dim_file (
-		                                parent_id, file_name, is_directory, file_hash, file_size,
-		                                device_id, inode, modified_at, mimetype
-		                            ) VALUES (
-		                                :parent_id, :file_name, FALSE, :file_hash, :file_size,
-		                                :device_id, :inode, :modified_at, :mimetype
-		                            )
-		                        """),
+									INSERT INTO public.dim_file (
+										parent_id, file_name, is_directory, file_hash, file_size,
+										device_id, inode, modified_at, mimetype
+									) VALUES (
+										:parent_id, :file_name, FALSE, :file_hash, :file_size,
+										:device_id, :inode, :modified_at, :mimetype
+									)
+								"""),
 					{
 						"parent_id": parent_id,
 						"file_name": info_dict['file_name'],
@@ -83,17 +96,17 @@ def process_directory(root_directory: str):
 					int(existing_mtime_ts) != int(info_dict['mtime_ts'])):
 
 					logger.debug(f"UPDATING record for {info_dict['file_name']}")
-					session.execute(
+					db.execute(
 						text("""
-				            UPDATE public.dim_file SET
-				                file_hash = :file_hash,
-				                file_size = :file_size,
-				                modified_at = :modified_at,
-				                mimetype = :mimetype,
-				                inode = :inode,
-				                device_id = :device_id
-				            WHERE id = :file_id
-				        """),
+							UPDATE public.dim_file SET
+								file_hash = :file_hash,
+								file_size = :file_size,
+								modified_at = :modified_at,
+								mimetype = :mimetype,
+								inode = :inode,
+								device_id = :device_id
+							WHERE id = :file_id
+						"""),
 						{
 							"file_hash": file_hash,
 							"file_size": info_dict['file_size'],
@@ -106,6 +119,11 @@ def process_directory(root_directory: str):
 					)
 				else:
 					logger.debug(f"Skipping unchanged file: {info_dict['file_name']}")
-		session.commit()
+			if i % 250 == 0:
+				db.commit()
+		db.commit()
 		logger.success("Processing complete. Changes committed.")
-
+	except Exception as e:
+		logger.critical(f"An error occurred: {e}")
+		db.rollback()  # Roll back the passed-in session
+		raise  # Re-raise the exception so the caller knows something went wrong
