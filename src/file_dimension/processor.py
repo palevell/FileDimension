@@ -47,7 +47,7 @@ def process_directory(db: Session, root_directory: str, max_files_override: int)
 
 			# 2. Calculate the file's hash
 			file_hash = calculate_sha384(info_dict['full_path'])
-			logger.info(f"file_hash -> {file_hash}")
+			# logger.info(f"file_hash -> {file_hash}")
 
 			# 3. Check if the file record already exists
 			existing_file = db.execute(

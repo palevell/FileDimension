@@ -6,7 +6,7 @@ import typer
 from datetime import datetime
 from . import processor
 from .config import logger, MAX_FILES as MAX_FILES_FROM_ENV  # Rename for clarity
-from .database import SessionLocal, find_duplicate_sets, get_full_path_for_id
+from .database import SessionLocal, find_duplicate_sets, get_full_path_for_id, prune_database
 from sqlalchemy import text
 
 app = typer.Typer()
@@ -34,7 +34,12 @@ def find_dupes(
 	),
 	limit: int = typer.Option(
 		25, "--limit", "-l", help="The maximum number of duplicate sets to list."
-	)
+	),
+	prune: bool = typer.Option(
+		True,  # Pruning is on by default
+		"--prune/--no-prune",
+		help="Enable/disable cleaning of non-existent files from the DB before scanning."
+	),
 ):
 	"""
 	Finds duplicate files and saves a detailed report in JSONL format.
@@ -46,6 +51,10 @@ def find_dupes(
 	logger.info(f"Finding duplicate files, report will be saved to '{report_name}'")
 
 	with SessionLocal() as db_session, open(report_name, "w") as f:
+		# Run the prune operation first (if enabled)
+		if prune:
+			prune_database(db=db_session)
+
 		duplicate_sets = find_duplicate_sets(db=db_session, limit=limit)
 
 		if not duplicate_sets:
@@ -86,14 +95,23 @@ def scan(
 		"-m",
 		help="Maximum number of files to process. Overrides MAX_FILES env var. Use -1 for unlimited."
 	),
+	prune: bool = typer.Option(
+		True,  # Pruning is on by default
+		"--prune/--no-prune",
+		help="Enable/disable cleaning of non-existent files from the DB before scanning."
+	),
 ):
 	"""
 	Scans a directory and populates the File Dimension table in the database.
 	"""
-	logger.info(f"Starting scan on directory: {directory}")
 
 	# Pass the final max_files value to the processor
 	with SessionLocal() as db_session:
+		# Run the prune operation first (if enabled)
+		if prune:
+			prune_database(db=db_session)
+
+		logger.info(f"Starting scan on directory: {directory}")
 		processor.process_directory(
 			db=db_session,
 			root_directory=directory,

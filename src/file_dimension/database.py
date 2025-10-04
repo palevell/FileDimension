@@ -1,6 +1,7 @@
 # src/file_dimension/database.py
 
 import json
+import os
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
@@ -130,7 +131,7 @@ def get_full_path_for_id(db: Session, file_id: int, cache: dict) -> str:
 	return path
 
 
-def initialize_database(session):
+def initialize_database_old(session):
 	"""
 	Ensures the foundational data, like the root directory, exists.
 	This is an idempotent operation.
@@ -147,3 +148,49 @@ def initialize_database(session):
 # Your schema already has this, but parent_id can be NULL.
 # A better constraint for the root is a unique index where parent_id IS NULL.
 # For now, this will work as long as only one entry has a NULL parent.
+
+
+def prune_database(db: Session):
+	"""
+	Scans all file records in the database and removes any that no longer
+	exist on the filesystem.
+	"""
+	logger.info("Starting pre-scan database prune...")
+
+	# A cache is essential for performance here
+	path_cache = {}
+
+	# Get all records that are files, not directories
+	all_files = db.execute(
+		text("SELECT id FROM public.dim_file WHERE is_directory = FALSE")
+	).fetchall()
+
+	ids_to_delete = []
+	total_files = len(all_files)
+	logger.info(f"Verifying existence of {total_files} file records...")
+
+	for i, file_record in enumerate(all_files):
+		if (i + 1) % 1000 == 0:
+			logger.info(f"Checked {i + 1}/{total_files} files...")
+
+		full_path = get_full_path_for_id(db, file_record.id, path_cache)
+		if not os.path.exists(full_path):
+			logger.warning(f"File not found, marking for deletion: {full_path}")
+			ids_to_delete.append(file_record.id)
+
+	if not ids_to_delete:
+		logger.success("Prune complete. No missing files found.")
+		return
+
+	logger.info(f"Deleting {len(ids_to_delete)} missing file records...")
+
+	# Delete all missing records in a single query
+	db.execute(
+		text("DELETE FROM public.dim_file WHERE id = ANY(:ids)"),
+		{"ids": ids_to_delete}
+	)
+	db.commit()
+	logger.success(f"Successfully deleted {len(ids_to_delete)} records.")
+
+
+
